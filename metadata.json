@@ -1,0 +1,6 @@
+{
+  "name": "Haroon Afzal - Real Estate Broker",
+  "description": "A professional portfolio and real estate services platform for Haroon Afzal, Real Estate Broker with Superstars Real Estate Ltd., Brokerage in Ontario. Featuring property listings, free home evaluation, and financial calculators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
