@@ -15,13 +15,15 @@ app.get("/api/listings", async (req, res) => {
   const { 
     city = "All", 
     type = "All", 
-    minPrice = "0",
+    minPrice = "0", 
     maxPrice = "4000000", 
     keyword = "",
     beds = "All",
     baths = "All",
     saleLease = "All",
-    sortBy = "listDate"
+    sortBy = "listDate",
+    featured = "false",
+    mls = ""
   } = req.query;
 
   const cityStr = String(city);
@@ -31,6 +33,8 @@ app.get("/api/listings", async (req, res) => {
   const bedsStr = String(beds);
   const bathsStr = String(baths);
   const sortByStr = String(sortBy);
+  const isFeatured = String(featured) === "true";
+  const mlsStr = String(mls);
 
   const ampreToken = process.env.AMPRE_API_TOKEN;
   const repliersKey = process.env.REPLIERS_API_KEY;
@@ -40,90 +44,121 @@ app.get("/api/listings", async (req, res) => {
     let fetchUrl = "";
     try {
       const ampreUrl = (process.env.AMPRE_API_URL || "https://query.ampre.ca/odata").replace(/\/$/, "");
-      console.log(`Fetching live listings from Ampre: City=${cityStr}, Type=${typeStr}, MinPrice=${minPrice}, MaxPrice=${maxPrice}, SaleLease=${saleLeaseStr}, Beds=${bedsStr}, Baths=${bathsStr}, SortBy=${sortByStr}`);
 
-      // Build standard OData filter
-      const filterParts = ["StandardStatus eq 'Active'"];
-      
-      // City (Title Case format since Ampre is case-sensitive and doesn't support tolower)
-      if (cityStr && cityStr !== "All" && cityStr !== "GTA") {
-        const formattedCity = cityStr.charAt(0).toUpperCase() + cityStr.slice(1).toLowerCase();
-        filterParts.push(`contains(City, '${formattedCity}')`);
-      }
+      let rawListings: any[] = [];
+      if (isFeatured || mlsStr.trim() !== "") {
+        const targetKeys = mlsStr.trim() !== ""
+          ? mlsStr.split(',').map(s => s.trim()).filter(Boolean)
+          : ["W13763512", "W13585394", "X13589254"];
+        
+        console.log(`Ampre fetching specific MLS keys:`, targetKeys);
+        const promises = targetKeys.map(async (k) => {
+          try {
+            const singleUrl = `${ampreUrl}/Property?$filter=ListingKey%20eq%20%27${k}%27&$expand=Media`;
+            const singleRes = await fetch(singleUrl, {
+              headers: {
+                "Authorization": `Bearer ${ampreToken}`,
+                "Accept": "application/json"
+              }
+            });
+            if (singleRes.ok) {
+              const singleData = await singleRes.json();
+              return singleData.value || [];
+            }
+          } catch (e) {
+            console.error(`Error fetching MLS ${k}:`, e);
+          }
+          return [];
+        });
 
-      // Sale vs Lease (Transaction Type) using standard RESO values
-      if (saleLeaseStr === "sale") {
-        filterParts.push(`TransactionType eq 'For Sale'`);
-      } else if (saleLeaseStr === "lease") {
-        filterParts.push(`TransactionType eq 'For Lease'`);
-      }
+        const results = await Promise.all(promises);
+        rawListings = results.flat();
+      } else {
+        console.log(`Fetching live listings from Ampre: City=${cityStr}, Type=${typeStr}, MinPrice=${minPrice}, MaxPrice=${maxPrice}, SaleLease=${saleLeaseStr}, Beds=${bedsStr}, Baths=${bathsStr}, SortBy=${sortByStr}`);
 
-      // Price limits
-      const minP = parseFloat(minPrice as string) || 0;
-      const maxP = parseFloat(maxPrice as string) || 0;
-      if (minP > 0) {
-        filterParts.push(`ListPrice ge ${minP}`);
-      }
-      if (maxP > 0 && maxP < 4000000) {
-        filterParts.push(`ListPrice le ${maxP}`);
-      }
-
-      // Bedrooms
-      if (bedsStr && bedsStr !== "All") {
-        const bedsNum = parseInt(bedsStr);
-        if (!isNaN(bedsNum) && bedsNum > 0) {
-          filterParts.push(`BedroomsTotal ge ${bedsNum}`);
+        // Build standard OData filter
+        const filterParts = ["StandardStatus eq 'Active'"];
+        
+        // City (Title Case format since Ampre is case-sensitive and doesn't support tolower)
+        if (cityStr && cityStr !== "All" && cityStr !== "GTA") {
+          const formattedCity = cityStr.charAt(0).toUpperCase() + cityStr.slice(1).toLowerCase();
+          filterParts.push(`contains(City, '${formattedCity}')`);
         }
-      }
 
-      // Bathrooms
-      if (bathsStr && bathsStr !== "All") {
-        const bathsNum = parseFloat(bathsStr);
-        if (!isNaN(bathsNum) && bathsNum > 0) {
-          filterParts.push(`BathroomsTotalInteger ge ${bathsNum}`);
+        // Sale vs Lease (Transaction Type) using standard RESO values
+        if (saleLeaseStr === "sale") {
+          filterParts.push(`TransactionType eq 'For Sale'`);
+        } else if (saleLeaseStr === "lease") {
+          filterParts.push(`TransactionType eq 'For Lease'`);
         }
-      }
 
-      // Property Type using standard RESO values (Case-sensitive)
-      if (typeStr && typeStr !== "All") {
-        if (typeStr === "condo") {
-          filterParts.push(`(contains(PropertyType, 'Condo') or contains(PropertySubType, 'Condo') or contains(PropertySubType, 'Condominium') or contains(PropertyType, 'Condominium'))`);
-        } else if (typeStr === "commercial") {
-          filterParts.push(`contains(PropertyType, 'Commercial')`);
-        } else if (typeStr === "townhome") {
-          filterParts.push(`(contains(PropertySubType, 'Townhouse') or contains(PropertySubType, 'Townhome') or contains(PropertySubType, 'Row') or contains(PropertySubType, 'Twnhouse') or contains(PropertySubType, 'Multiplex'))`);
-        } else if (typeStr === "residential") {
-          filterParts.push(`(contains(PropertyType, 'Residential') or contains(PropertyType, 'Freehold') or contains(PropertySubType, 'Detached') or contains(PropertySubType, 'Semi-Detached'))`);
+        // Price limits
+        const minP = parseFloat(minPrice as string) || 0;
+        const maxP = parseFloat(maxPrice as string) || 0;
+        if (minP > 0) {
+          filterParts.push(`ListPrice ge ${minP}`);
         }
-      }
-
-      // Keyword using case expansion (original, lower, upper, title) as tolower is not supported
-      if (keywordStr && keywordStr.trim() !== "") {
-        const kw = keywordStr.trim();
-        const kwLower = kw.toLowerCase();
-        const kwUpper = kw.toUpperCase();
-        const kwTitle = kw.charAt(0).toUpperCase() + kw.slice(1).toLowerCase();
-        filterParts.push(`(contains(PublicRemarks, '${kw}') or contains(UnparsedAddress, '${kw}') or contains(PublicRemarks, '${kwLower}') or contains(PublicRemarks, '${kwUpper}') or contains(PublicRemarks, '${kwTitle}'))`);
-      }
-
-      const filterValue = encodeURIComponent(filterParts.join(" and "));
-      // We set $top=100 to return plenty of listings matching our exact criteria while adhering to Ampre's limit
-      fetchUrl = `${ampreUrl}/Property?$filter=${filterValue}&$top=100&$expand=Media`;
-      console.log(`Ampre Fetching: ${fetchUrl}`);
-
-      const response = await fetch(fetchUrl, {
-        headers: {
-          "Authorization": `Bearer ${ampreToken}`,
-          "Accept": "application/json"
+        if (maxP > 0 && maxP < 4000000) {
+          filterParts.push(`ListPrice le ${maxP}`);
         }
-      });
 
-      if (!response.ok) {
-        throw new Error(`Ampre RESO API responded with status ${response.status}`);
+        // Bedrooms
+        if (bedsStr && bedsStr !== "All") {
+          const bedsNum = parseInt(bedsStr);
+          if (!isNaN(bedsNum) && bedsNum > 0) {
+            filterParts.push(`BedroomsTotal ge ${bedsNum}`);
+          }
+        }
+
+        // Bathrooms
+        if (bathsStr && bathsStr !== "All") {
+          const bathsNum = parseFloat(bathsStr);
+          if (!isNaN(bathsNum) && bathsNum > 0) {
+            filterParts.push(`BathroomsTotalInteger ge ${bathsNum}`);
+          }
+        }
+
+        // Property Type using standard RESO values (Case-sensitive)
+        if (typeStr && typeStr !== "All") {
+          if (typeStr === "condo") {
+            filterParts.push(`(contains(PropertyType, 'Condo') or contains(PropertySubType, 'Condo') or contains(PropertySubType, 'Condominium') or contains(PropertyType, 'Condominium'))`);
+          } else if (typeStr === "commercial") {
+            filterParts.push(`contains(PropertyType, 'Commercial')`);
+          } else if (typeStr === "townhome") {
+            filterParts.push(`(contains(PropertySubType, 'Townhouse') or contains(PropertySubType, 'Townhome') or contains(PropertySubType, 'Row') or contains(PropertySubType, 'Twnhouse') or contains(PropertySubType, 'Multiplex'))`);
+          } else if (typeStr === "residential") {
+            filterParts.push(`(contains(PropertyType, 'Residential') or contains(PropertyType, 'Freehold') or contains(PropertySubType, 'Detached') or contains(PropertySubType, 'Semi-Detached'))`);
+          }
+        }
+
+        // Keyword using case expansion (original, lower, upper, title) as tolower is not supported
+        if (keywordStr && keywordStr.trim() !== "") {
+          const kw = keywordStr.trim();
+          const kwLower = kw.toLowerCase();
+          const kwUpper = kw.toUpperCase();
+          const kwTitle = kw.charAt(0).toUpperCase() + kw.slice(1).toLowerCase();
+          filterParts.push(`(contains(PublicRemarks, '${kw}') or contains(UnparsedAddress, '${kw}') or contains(PublicRemarks, '${kwLower}') or contains(PublicRemarks, '${kwUpper}') or contains(PublicRemarks, '${kwTitle}'))`);
+        }
+
+        const filterValue = encodeURIComponent(filterParts.join(" and "));
+        // We set $top=100 to return plenty of listings matching our exact criteria while adhering to Ampre's limit
+        fetchUrl = `${ampreUrl}/Property?$filter=${filterValue}&$top=100&$expand=Media`;
+        console.log(`Ampre Fetching: ${fetchUrl}`);
+
+        const response = await fetch(fetchUrl, {
+          headers: {
+            "Authorization": `Bearer ${ampreToken}`,
+            "Accept": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Ampre RESO API responded with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        rawListings = data.value || data.listings || [];
       }
-
-      const data = await response.json();
-      const rawListings = data.value || data.listings || [];
 
       // Map Ampre (RESO Standard Fields) to our UI Schema
       const mappedListings = rawListings.map((item: any, index: number) => {
@@ -214,14 +249,16 @@ app.get("/api/listings", async (req, res) => {
         };
       });
 
-      // Post-filtering for strict match and safety
+      // Post-filtering for strict match and safety (skip if isFeatured or specific MLS queried)
       let filteredListings = mappedListings;
-      if (type && type !== "All") {
-        filteredListings = filteredListings.filter((item: any) => item.type === type);
-      }
-      if (saleLease && saleLease !== "All") {
-        const targetStatus = saleLease === "lease" ? "for-lease" : "for-sale";
-        filteredListings = filteredListings.filter((item: any) => item.status === targetStatus);
+      if (!isFeatured && (!mlsStr || mlsStr.trim() === "")) {
+        if (type && type !== "All") {
+          filteredListings = filteredListings.filter((item: any) => item.type === type);
+        }
+        if (saleLease && saleLease !== "All") {
+          const targetStatus = saleLease === "lease" ? "for-lease" : "for-sale";
+          filteredListings = filteredListings.filter((item: any) => item.status === targetStatus);
+        }
       }
 
       // Sort Listings

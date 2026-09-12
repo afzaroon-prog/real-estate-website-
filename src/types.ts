@@ -10,10 +10,12 @@ export interface Listing {
   garage: number;
   sqft: number;
   type: 'residential' | 'condo' | 'townhome' | 'commercial';
-  status: 'for-sale' | 'for-rent' | 'sold';
+  status: 'for-sale' | 'for-rent' | 'for-lease' | 'sold';
   description: string;
   features: string[];
   yearBuilt: number;
+  images?: string[];
+  isLiveMLS?: boolean;
 }
 
 export interface EvaluationRequest {

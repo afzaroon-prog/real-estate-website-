@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Listings from './components/Listings';
@@ -7,13 +7,13 @@ import EvaluationForm from './components/EvaluationForm';
 import AreaAlertForm from './components/AreaAlertForm';
 import ContactSection from './components/ContactSection';
 import AboutAndReviews from './components/AboutAndReviews';
+import FeaturedListings from './components/FeaturedListings';
 import Profile from './components/Profile';
 import BuyingInfo from './components/BuyingInfo';
 import SellingInfo from './components/SellingInfo';
 import HomeLifeLogo from './components/HomeLifeLogo';
-import { listingsData } from './data';
 import { motion, AnimatePresence } from 'motion/react';
-import { Building2, Phone, Mail, FileText, ArrowRight, Home, HelpCircle } from 'lucide-react';
+import { Building2, Phone, Mail } from 'lucide-react';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('home');
@@ -23,9 +23,6 @@ export default function App() {
     setActiveSection(sectionId);
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
-
-  // Preview properties highlighted on Homepage
-  const featuredListings = listingsData.slice(0, 3);
 
   return (
     <div id="full-site-wrapper" className="min-h-screen bg-black text-slate-100 font-sans flex flex-col justify-between">
@@ -47,74 +44,13 @@ export default function App() {
               {/* 1. Immersive Hero Background Slider Dashboard */}
               <Hero onNavigate={handleNavigate} />
 
-              {/* 2. Highlight Featured Properties Gallery Preview */}
-              <section className="py-24 bg-black border-t border-zinc-900">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12">
-                    <div>
-                      <div className="text-emerald-400 text-xs font-semibold uppercase tracking-widest mb-3">
-                        Featured Portfolio
-                      </div>
-                      <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium tracking-tight">
-                        Selected Premium Listings
-                      </h2>
-                    </div>
-                    <button
-                      onClick={() => handleNavigate('listings')}
-                      className="mt-4 sm:mt-0 px-5 py-3 bg-neutral-950 hover:bg-neutral-900 text-emerald-400 border border-zinc-900 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 cursor-pointer outline-none align-baseline self-start"
-                    >
-                      View All Listings
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+              {/* 2. Haroon Afzal's Featured Real MLS Listings */}
+              <FeaturedListings onNavigate={handleNavigate} />
 
-                  {/* Highlight Cards Grid */}
-                  <div className="grid p-0 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {featuredListings.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-neutral-950 rounded-2xl overflow-hidden border border-zinc-900 shadow-lg group flex flex-col justify-between"
-                      >
-                        <div className="relative overflow-hidden aspect-video">
-                          <img
-                            src={item.imageUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-[10px] text-emerald-400 font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-zinc-900">
-                            {item.city}
-                          </div>
-                        </div>
-                        <div className="p-6 flex-1 flex flex-col justify-between">
-                          <div>
-                            <span className="text-xl font-bold font-sans text-white block mb-1">
-                              ${item.price.toLocaleString()}
-                            </span>
-                            <h3 className="font-serif text-base font-semibold text-slate-300 mb-1 leading-snug line-clamp-1">
-                              {item.title}
-                            </h3>
-                            <span className="text-xs text-slate-500 block truncate font-light">
-                              {item.address}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleNavigate('listings')}
-                            className="mt-5 w-full py-2.5 bg-zinc-900 text-slate-300 font-semibold text-xs rounded-lg hover:bg-emerald-500 hover:text-slate-950 transition-colors border border-zinc-850 flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            Details & Showing Call
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {/* 3. About credentials and Reviews Accordion Panel */}
+              {/* 3. About credentials, Broker Experience and Client Reviews */}
               <AboutAndReviews />
 
-              {/* 4. Streamlined Contact Information deck */}
+              {/* 3. Streamlined Contact Information deck */}
               <ContactSection />
             </motion.div>
           )}

@@ -187,6 +187,81 @@ export const listingsData: Listing[] = [
   }
 ];
 
+export const haroonFeaturedListings: Listing[] = [
+  {
+    id: 'W13763512',
+    title: 'Windemere Manor Suite 302',
+    price: 3400,
+    address: '205 Lakeshore Road W 302',
+    city: 'Oakville',
+    imageUrl: 'https://trreb-image.ampre.ca/g55HksgWY76J-mxOlTwy5pjqamLn0N03t78IdVj9EU8/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20260909231934/L3RycmViL2xpc3RpbmdzLzQ0LzY0LzEwLzI0L3AvMDQ5OTc5MDEtZjgyZC00YzQzLWEwZjMtMzRmZmRlNjU3Njg4LmpwZw.jpg',
+    images: [
+      'https://trreb-image.ampre.ca/g55HksgWY76J-mxOlTwy5pjqamLn0N03t78IdVj9EU8/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20260909231934/L3RycmViL2xpc3RpbmdzLzQ0LzY0LzEwLzI0L3AvMDQ5OTc5MDEtZjgyZC00YzQzLWEwZjMtMzRmZmRlNjU3Njg4LmpwZw.jpg',
+      'https://trreb-image.ampre.ca/0o8WDzI2JVt__sKu2UUVeM2cTYaxYyppWoTnAfgT7g0/rs:fit:1920:1920/aq:size:512000:25:75/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20260909231934/L3RycmViL2xpc3RpbmdzLzQ0LzY0LzEwLzI0L3AvMDQ5OTc5MDEtZjgyZC00YzQzLWEwZjMtMzRmZmRlNjU3Njg4LmpwZw.jpg',
+      'https://trreb-image.ampre.ca/sezWW7UeFx-RbEl4jyeWyL4n9kf-gWDOxyw0JO-puto/rs:fit:960:960/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20260909231934/L3RycmViL2xpc3RpbmdzLzQ0LzY0LzEwLzI0L3AvMDQ5OTc5MDEtZjgyZC00YzQzLWEwZjMtMzRmZmRlNjU3Njg4LmpwZw.jpg',
+      'https://trreb-image.ampre.ca/Lfb18fsf-ecu-MUPkpg2i4tZRMJIu-95qFOP1FeBCvU/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20260909231924/L3RycmViL2xpc3RpbmdzLzQ0LzY0LzEwLzI0L3AvMGI4N2IzNGQtZDVlNy00MDVjLWE2NjYtZjFlNTkyNDQwM2U4LmpwZw.jpg'
+    ],
+    beds: 2,
+    baths: 2,
+    garage: 1,
+    sqft: 1100,
+    type: 'condo',
+    status: 'for-lease',
+    description: 'Welcome to Windemere Manor, an Art Deco-inspired boutique residence with only 33 suites, steps from Downtown Oakville and Lake Ontario. Stunning 2 bed and 2 washrooms condo with high ceilings, private terrace with gas BBQ hookup, upscale kitchen with quartz countertops and stainless steel appliances, open concept living and dining, and opulent primary retreat with walk-in closet and ensuite.',
+    features: ['Steps to Lake Ontario & Downtown Oakville', 'Private Terrace with Gas BBQ Hookup', 'Boutique 33-Suite Luxury Residence', 'Quartz Countertops & Stainless Appliances', 'Primary Ensuite & Walk-in Closet', 'Underground Parking & Storage Locker'],
+    yearBuilt: 2018,
+    isLiveMLS: true
+  },
+  {
+    id: 'W13585394',
+    title: 'Modern Executive Office Facility Unit 20',
+    price: 2199000,
+    address: '2578 Bristol Circle 20',
+    city: 'Oakville',
+    imageUrl: 'https://trreb-image.ampre.ca/Kt-mV-2tN3gVVsW3StbbsGs-n2WqzYa5tLt1xlubpPo/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250922173504/L3RycmViL2xpc3RpbmdzLzQyLzE2LzYwLzU0L3AvY2MwNTVlMmMtYWQxZC00Nzc1LWJjMTAtYjA1YzM3ZGFmMjZhLmpwZw.jpg',
+    images: [
+      'https://trreb-image.ampre.ca/Kt-mV-2tN3gVVsW3StbbsGs-n2WqzYa5tLt1xlubpPo/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250922173504/L3RycmViL2xpc3RpbmdzLzQyLzE2LzYwLzU0L3AvY2MwNTVlMmMtYWQxZC00Nzc1LWJjMTAtYjA1YzM3ZGFmMjZhLmpwZw.jpg',
+      'https://trreb-image.ampre.ca/G2RHYWD2PznhOJW23GbsXTwqtyTuNeyxN9OA5c0VEOA/rs:fit:1920:1920/aq:size:512000:25:75/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250922173504/L3RycmViL2xpc3RpbmdzLzQyLzE2LzYwLzU0L3AvY2MwNTVlMmMtYWQxZC00Nzc1LWJjMTAtYjA1YzM3ZGFmMjZhLmpwZw.jpg',
+      'https://trreb-image.ampre.ca/jWZLQNLzChgzJE1oBHjo7c6_kUYn-Pph53dXWiiqQeo/rs:fit:960:960/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250922173504/L3RycmViL2xpc3RpbmdzLzQyLzE2LzYwLzU0L3AvY2MwNTVlMmMtYWQxZC00Nzc1LWJjMTAtYjA1YzM3ZGFmMjZhLmpwZw.jpg',
+      'https://trreb-image.ampre.ca/cDwkaWTbvmPFlronea8D_3f0BEvySSvfztFtf3zeqOI/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250922173500/L3RycmViL2xpc3RpbmdzLzQyLzE2LzYwLzU0L3AvOGRjNjA5NjktNmVkYy00NTEwLTgzYmYtMmNlMDllODgxZTRlLmpwZw.jpg'
+    ],
+    beds: 0,
+    baths: 2,
+    garage: 6,
+    sqft: 2230,
+    type: 'commercial',
+    status: 'for-sale',
+    description: 'This beautiful office building combines modern design with everyday functionality, offering 1,830 sq. ft. of space plus a 400 sq. ft. mezzanine. The mezzanine includes three private offices and a comfortable boardroom, while the main floor features an open reception area, open-concept workspaces, and private offices. Located in prestigious Winston Business Park with seamless connectivity to QEW, 403, and 407.',
+    features: ['1,830 Sq Ft Main + 400 Sq Ft Mezzanine', '3 Private Offices & Dedicated Boardroom', 'Bright Open Reception & Workstations', 'Winston Business Park Corporate Hub', 'Direct Highway Access (QEW / 403 / 407)', 'Ample Reserved & Surface Parking'],
+    yearBuilt: 2012,
+    isLiveMLS: true
+  },
+  {
+    id: 'X13589254',
+    title: 'Scenic 1-Acre Treed Building Lot',
+    price: 169000,
+    address: '82 Glen Ridge Road',
+    city: 'Marmora and Lake',
+    imageUrl: 'https://trreb-image.ampre.ca/nqOrJXHp7H0Vfh8zayLuVKIJ0J5Msb3o103pJvZJQQ8/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250923214357/L3RycmViL2xpc3RpbmdzLzQyLzE4LzA2LzgyL3AvODc3NjllZmUtMDNmMS00ZTBlLTkwNGYtNmU1MDg5NDEzMzFhLmpwZWc.jpg',
+    images: [
+      'https://trreb-image.ampre.ca/nqOrJXHp7H0Vfh8zayLuVKIJ0J5Msb3o103pJvZJQQ8/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250923214357/L3RycmViL2xpc3RpbmdzLzQyLzE4LzA2LzgyL3AvODc3NjllZmUtMDNmMS00ZTBlLTkwNGYtNmU1MDg5NDEzMzFhLmpwZWc.jpg',
+      'https://trreb-image.ampre.ca/mezQUaA2w71ZRTduEb4pKTInFZFrKfEOTAiz7Vxz-uo/rs:fit:1920:1920/aq:size:512000:25:75/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250923214357/L3RycmViL2xpc3RpbmdzLzQyLzE4LzA2LzgyL3AvODc3NjllZmUtMDNmMS00ZTBlLTkwNGYtNmU1MDg5NDEzMzFhLmpwZWc.jpg',
+      'https://trreb-image.ampre.ca/9SraAYkC8efXmC3lQV3AnIUZWKpGoYg4Boz57kLAUSA/rs:fit:960:960/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250923214357/L3RycmViL2xpc3RpbmdzLzQyLzE4LzA2LzgyL3AvODc3NjllZmUtMDNmMS00ZTBlLTkwNGYtNmU1MDg5NDEzMzFhLmpwZWc.jpg',
+      'https://trreb-image.ampre.ca/xxIQn7_Ql9bQccIoJv-E_dZaju6PWIfm8dhzkxKqIPo/rs:fit/wm:.5:so:0:50:.4/wmsh:10/wmt:PHNwYW4gZm9yZWdyb3VuZD0nd2hpdGUnIGZvbnQ9JzY4Jz5IT01FTElGRSBTVVBFUlNUQVJTIFJFQUwgRVNUQVRFIExJTUlURUQsIEJyb2tlcmFnZTwvc3Bhbj4/cb:20250923214358/L3RycmViL2xpc3RpbmdzLzQyLzE4LzA2LzgyL3AvYTUzZDM1Y2QtYTQ1OC00MmJiLTg3MTQtYjg4YmU3YjJiYjg1LmpwZw.jpg'
+    ],
+    beds: 0,
+    baths: 0,
+    garage: 0,
+    sqft: 43560,
+    type: 'residential',
+    status: 'for-sale',
+    description: 'Partially treed vacant lot of 1-acre in the picturesque town of Marmora and Lake. Just a short walk to the Crowe River public boat launch and Marmora\'s quaint and friendly downtown. High-speed internet available at the road. Build your dream custom home, four-season sanctuary, or peaceful country retreat surrounded by nature.',
+    features: ['1-Acre Scenic Treed Lot', 'Short Walk to Crowe River Boat Launch', 'High-Speed Internet Available at Road', 'Year-Round Municipal Paved Road', 'Ideal for Custom Home or Retreat', 'Peaceful Country Setting'],
+    yearBuilt: 2024,
+    isLiveMLS: true
+  }
+];
+
 export const testimonials = [
   {
     name: 'Muhammad & Fatima S.',
