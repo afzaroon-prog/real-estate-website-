@@ -16,6 +16,9 @@ export interface Listing {
   yearBuilt: number;
   images?: string[];
   isLiveMLS?: boolean;
+  isExclusive?: boolean;
+  officeName?: string;
+  propertySubType?: string;
 }
 
 export interface EvaluationRequest {

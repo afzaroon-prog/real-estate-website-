@@ -46,10 +46,13 @@ app.get("/api/listings", async (req, res) => {
       const ampreUrl = (process.env.AMPRE_API_URL || "https://query.ampre.ca/odata").replace(/\/$/, "");
 
       let rawListings: any[] = [];
+      const directKeys = ["W13763512", "W13585394", "X13589254"];
+      const directKeySet = new Set(directKeys);
+
       if (isFeatured || mlsStr.trim() !== "") {
         const targetKeys = mlsStr.trim() !== ""
           ? mlsStr.split(',').map(s => s.trim()).filter(Boolean)
-          : ["W13763512", "W13585394", "X13589254"];
+          : directKeys;
         
         console.log(`Ampre fetching specific MLS keys:`, targetKeys);
         const promises = targetKeys.map(async (k) => {
@@ -71,8 +74,47 @@ app.get("/api/listings", async (req, res) => {
           return [];
         });
 
+        // Also fetch active for-sale listings for HomeLife Superstars across Brampton, Toronto, Mississauga, Oakville
+        let brokerageListings: any[] = [];
+        if (isFeatured && mlsStr.trim() === "") {
+          try {
+            console.log("Fetching HomeLife Superstars portfolio listings for Brampton, Toronto, Mississauga, Oakville...");
+            const hlFilter = encodeURIComponent("contains(ListOfficeName, 'HOMELIFE SUPERSTARS') and StandardStatus eq 'Active' and contains(TransactionType, 'Sale')");
+            const hlUrl = `${ampreUrl}/Property?$filter=${hlFilter}&$expand=Media&$top=100`;
+            const hlRes = await fetch(hlUrl, {
+              headers: {
+                "Authorization": `Bearer ${ampreToken}`,
+                "Accept": "application/json"
+              }
+            });
+            if (hlRes.ok) {
+              const hlData = await hlRes.json();
+              const items = hlData.value || [];
+              const targetCities = ["brampton", "toronto", "mississauga", "oakville"];
+              brokerageListings = items.filter((item: any) => {
+                const c = (item.City || "").toLowerCase();
+                return targetCities.some(tc => c.includes(tc));
+              });
+              console.log(`Retrieved ${brokerageListings.length} HomeLife Superstars sale listings`);
+            }
+          } catch (err) {
+            console.error("Error fetching HomeLife Superstars portfolio:", err);
+          }
+        }
+
         const results = await Promise.all(promises);
-        rawListings = results.flat();
+        const directListings = results.flat();
+
+        // Merge direct + brokerage listings with deduplication
+        const seen = new Set<string>();
+        const merged: any[] = [];
+        for (const item of [...directListings, ...brokerageListings]) {
+          if (item && item.ListingKey && !seen.has(item.ListingKey)) {
+            seen.add(item.ListingKey);
+            merged.push(item);
+          }
+        }
+        rawListings = merged;
       } else {
         console.log(`Fetching live listings from Ampre: City=${cityStr}, Type=${typeStr}, MinPrice=${minPrice}, MaxPrice=${maxPrice}, SaleLease=${saleLeaseStr}, Beds=${bedsStr}, Baths=${bathsStr}, SortBy=${sortByStr}`);
 
@@ -245,7 +287,10 @@ app.get("/api/listings", async (req, res) => {
           description: item.PublicRemarks || "An incredible opportunity to own this highly desirable property. Centrally located with high-end premium finishes throughout.",
           features: cleanFeatures,
           yearBuilt: parseInt(item.YearBuilt) || 2015,
-          isLiveMLS: true
+          isLiveMLS: true,
+          isExclusive: directKeySet.has(item.ListingKey),
+          officeName: item.ListOfficeName || "HomeLife Superstars Real Estate Ltd., Brokerage",
+          propertySubType: item.PropertySubType || item.PropertyType || ""
         };
       });
 
@@ -262,7 +307,14 @@ app.get("/api/listings", async (req, res) => {
       }
 
       // Sort Listings
-      if (sortBy === "priceAsc") {
+      if (isFeatured) {
+        // Direct exclusive listings always first, then by price descending
+        filteredListings.sort((a: any, b: any) => {
+          if (a.isExclusive && !b.isExclusive) return -1;
+          if (!a.isExclusive && b.isExclusive) return 1;
+          return b.price - a.price;
+        });
+      } else if (sortBy === "priceAsc") {
         filteredListings.sort((a: any, b: any) => a.price - b.price);
       } else if (sortBy === "priceDesc") {
         filteredListings.sort((a: any, b: any) => b.price - a.price);

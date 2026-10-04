@@ -32,10 +32,13 @@ exports.handler = async function (event, context) {
     try {
       const ampreUrl = (process.env.AMPRE_API_URL || "https://query.ampre.ca/odata").replace(/\/$/, "");
       let rawListings = [];
+      const directKeys = ["W13763512", "W13585394", "X13589254"];
+      const directKeySet = new Set(directKeys);
+
       if (isFeatured || mlsStr.trim() !== "") {
         const targetKeys = mlsStr.trim() !== ""
           ? mlsStr.split(',').map(s => s.trim()).filter(Boolean)
-          : ["W13763512", "W13585394", "X13589254"];
+          : directKeys;
         
         const promises = targetKeys.map(async (k) => {
           try {
@@ -56,8 +59,44 @@ exports.handler = async function (event, context) {
           return [];
         });
 
+        // Also fetch active for-sale listings for HomeLife Superstars across Brampton, Toronto, Mississauga, Oakville
+        let brokerageListings = [];
+        if (isFeatured && mlsStr.trim() === "") {
+          try {
+            const hlFilter = encodeURIComponent("contains(ListOfficeName, 'HOMELIFE SUPERSTARS') and StandardStatus eq 'Active' and contains(TransactionType, 'Sale')");
+            const hlUrl = `${ampreUrl}/Property?$filter=${hlFilter}&$expand=Media&$top=100`;
+            const hlRes = await globalThis.fetch(hlUrl, {
+              headers: {
+                "Authorization": `Bearer ${ampreToken}`,
+                "Accept": "application/json"
+              }
+            });
+            if (hlRes.ok) {
+              const hlData = await hlRes.json();
+              const items = hlData.value || [];
+              const targetCities = ["brampton", "toronto", "mississauga", "oakville"];
+              brokerageListings = items.filter((item) => {
+                const c = (item.City || "").toLowerCase();
+                return targetCities.some(tc => c.includes(tc));
+              });
+            }
+          } catch (err) {
+            console.error("Error fetching HomeLife Superstars portfolio in Netlify function:", err);
+          }
+        }
+
         const results = await Promise.all(promises);
-        rawListings = results.flat();
+        const directListings = results.flat();
+
+        const seen = new Set();
+        const merged = [];
+        for (const item of [...directListings, ...brokerageListings]) {
+          if (item && item.ListingKey && !seen.has(item.ListingKey)) {
+            seen.add(item.ListingKey);
+            merged.push(item);
+          }
+        }
+        rawListings = merged;
       } else {
         const filterParts = ["StandardStatus eq 'Active'"];
         
@@ -213,7 +252,10 @@ exports.handler = async function (event, context) {
           description: item.PublicRemarks || "An incredible opportunity to own this highly desirable property.",
           features: cleanFeatures,
           yearBuilt: parseInt(item.YearBuilt) || 2015,
-          isLiveMLS: true
+          isLiveMLS: true,
+          isExclusive: directKeySet.has(item.ListingKey),
+          officeName: item.ListOfficeName || "HomeLife Superstars Real Estate Ltd., Brokerage",
+          propertySubType: item.PropertySubType || item.PropertyType || ""
         };
       });
 
@@ -228,7 +270,14 @@ exports.handler = async function (event, context) {
         }
       }
 
-      if (sortByStr === "priceAsc") {
+      if (isFeatured) {
+        // Direct exclusive listings always first, then by price descending
+        filteredListings.sort((a, b) => {
+          if (a.isExclusive && !b.isExclusive) return -1;
+          if (!a.isExclusive && b.isExclusive) return 1;
+          return b.price - a.price;
+        });
+      } else if (sortByStr === "priceAsc") {
         filteredListings.sort((a, b) => a.price - b.price);
       } else if (sortByStr === "priceDesc") {
         filteredListings.sort((a, b) => b.price - a.price);

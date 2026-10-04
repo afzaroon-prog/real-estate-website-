@@ -39,7 +39,9 @@ app.get("/api/listings", async (req, res) => {
     beds = "All",
     baths = "All",
     saleLease = "All",
-    sortBy = "listDate"
+    sortBy = "listDate",
+    featured = "false",
+    mls = ""
   } = req.query;
   const cityStr = String(city);
   const typeStr = String(type);
@@ -48,75 +50,140 @@ app.get("/api/listings", async (req, res) => {
   const bedsStr = String(beds);
   const bathsStr = String(baths);
   const sortByStr = String(sortBy);
+  const isFeatured = String(featured) === "true";
+  const mlsStr = String(mls);
   const ampreToken = process.env.AMPRE_API_TOKEN;
   const repliersKey = process.env.REPLIERS_API_KEY;
   if (ampreToken && ampreToken !== "YOUR_AMPRE_API_TOKEN" && ampreToken.trim() !== "") {
     let fetchUrl = "";
     try {
       const ampreUrl = (process.env.AMPRE_API_URL || "https://query.ampre.ca/odata").replace(/\/$/, "");
-      console.log(`Fetching live listings from Ampre: City=${cityStr}, Type=${typeStr}, MinPrice=${minPrice}, MaxPrice=${maxPrice}, SaleLease=${saleLeaseStr}, Beds=${bedsStr}, Baths=${bathsStr}, SortBy=${sortByStr}`);
-      const filterParts = ["StandardStatus eq 'Active'"];
-      if (cityStr && cityStr !== "All" && cityStr !== "GTA") {
-        const formattedCity = cityStr.charAt(0).toUpperCase() + cityStr.slice(1).toLowerCase();
-        filterParts.push(`contains(City, '${formattedCity}')`);
-      }
-      if (saleLeaseStr === "sale") {
-        filterParts.push(`TransactionType eq 'For Sale'`);
-      } else if (saleLeaseStr === "lease") {
-        filterParts.push(`TransactionType eq 'For Lease'`);
-      }
-      const minP = parseFloat(minPrice) || 0;
-      const maxP = parseFloat(maxPrice) || 0;
-      if (minP > 0) {
-        filterParts.push(`ListPrice ge ${minP}`);
-      }
-      if (maxP > 0 && maxP < 4e6) {
-        filterParts.push(`ListPrice le ${maxP}`);
-      }
-      if (bedsStr && bedsStr !== "All") {
-        const bedsNum = parseInt(bedsStr);
-        if (!isNaN(bedsNum) && bedsNum > 0) {
-          filterParts.push(`BedroomsTotal ge ${bedsNum}`);
+      let rawListings = [];
+      const directKeys = ["W13763512", "W13585394", "X13589254"];
+      const directKeySet = new Set(directKeys);
+      if (isFeatured || mlsStr.trim() !== "") {
+        const targetKeys = mlsStr.trim() !== "" ? mlsStr.split(",").map((s) => s.trim()).filter(Boolean) : directKeys;
+        console.log(`Ampre fetching specific MLS keys:`, targetKeys);
+        const promises = targetKeys.map(async (k) => {
+          try {
+            const singleUrl = `${ampreUrl}/Property?$filter=ListingKey%20eq%20%27${k}%27&$expand=Media`;
+            const singleRes = await fetch(singleUrl, {
+              headers: {
+                "Authorization": `Bearer ${ampreToken}`,
+                "Accept": "application/json"
+              }
+            });
+            if (singleRes.ok) {
+              const singleData = await singleRes.json();
+              return singleData.value || [];
+            }
+          } catch (e) {
+            console.error(`Error fetching MLS ${k}:`, e);
+          }
+          return [];
+        });
+        let brokerageListings = [];
+        if (isFeatured && mlsStr.trim() === "") {
+          try {
+            console.log("Fetching HomeLife Superstars portfolio listings for Brampton, Toronto, Mississauga, Oakville...");
+            const hlFilter = encodeURIComponent("contains(ListOfficeName, 'HOMELIFE SUPERSTARS') and StandardStatus eq 'Active' and contains(TransactionType, 'Sale')");
+            const hlUrl = `${ampreUrl}/Property?$filter=${hlFilter}&$expand=Media&$top=100`;
+            const hlRes = await fetch(hlUrl, {
+              headers: {
+                "Authorization": `Bearer ${ampreToken}`,
+                "Accept": "application/json"
+              }
+            });
+            if (hlRes.ok) {
+              const hlData = await hlRes.json();
+              const items = hlData.value || [];
+              const targetCities = ["brampton", "toronto", "mississauga", "oakville"];
+              brokerageListings = items.filter((item) => {
+                const c = (item.City || "").toLowerCase();
+                return targetCities.some((tc) => c.includes(tc));
+              });
+              console.log(`Retrieved ${brokerageListings.length} HomeLife Superstars sale listings`);
+            }
+          } catch (err) {
+            console.error("Error fetching HomeLife Superstars portfolio:", err);
+          }
         }
-      }
-      if (bathsStr && bathsStr !== "All") {
-        const bathsNum = parseFloat(bathsStr);
-        if (!isNaN(bathsNum) && bathsNum > 0) {
-          filterParts.push(`BathroomsTotalInteger ge ${bathsNum}`);
+        const results = await Promise.all(promises);
+        const directListings = results.flat();
+        const seen = /* @__PURE__ */ new Set();
+        const merged = [];
+        for (const item of [...directListings, ...brokerageListings]) {
+          if (item && item.ListingKey && !seen.has(item.ListingKey)) {
+            seen.add(item.ListingKey);
+            merged.push(item);
+          }
         }
-      }
-      if (typeStr && typeStr !== "All") {
-        if (typeStr === "condo") {
-          filterParts.push(`(contains(PropertyType, 'Condo') or contains(PropertySubType, 'Condo') or contains(PropertySubType, 'Condominium') or contains(PropertyType, 'Condominium'))`);
-        } else if (typeStr === "commercial") {
-          filterParts.push(`contains(PropertyType, 'Commercial')`);
-        } else if (typeStr === "townhome") {
-          filterParts.push(`(contains(PropertySubType, 'Townhouse') or contains(PropertySubType, 'Townhome') or contains(PropertySubType, 'Row') or contains(PropertySubType, 'Twnhouse') or contains(PropertySubType, 'Multiplex'))`);
-        } else if (typeStr === "residential") {
-          filterParts.push(`(contains(PropertyType, 'Residential') or contains(PropertyType, 'Freehold') or contains(PropertySubType, 'Detached') or contains(PropertySubType, 'Semi-Detached'))`);
+        rawListings = merged;
+      } else {
+        console.log(`Fetching live listings from Ampre: City=${cityStr}, Type=${typeStr}, MinPrice=${minPrice}, MaxPrice=${maxPrice}, SaleLease=${saleLeaseStr}, Beds=${bedsStr}, Baths=${bathsStr}, SortBy=${sortByStr}`);
+        const filterParts = ["StandardStatus eq 'Active'"];
+        if (cityStr && cityStr !== "All" && cityStr !== "GTA") {
+          const formattedCity = cityStr.charAt(0).toUpperCase() + cityStr.slice(1).toLowerCase();
+          filterParts.push(`contains(City, '${formattedCity}')`);
         }
-      }
-      if (keywordStr && keywordStr.trim() !== "") {
-        const kw = keywordStr.trim();
-        const kwLower = kw.toLowerCase();
-        const kwUpper = kw.toUpperCase();
-        const kwTitle = kw.charAt(0).toUpperCase() + kw.slice(1).toLowerCase();
-        filterParts.push(`(contains(PublicRemarks, '${kw}') or contains(UnparsedAddress, '${kw}') or contains(PublicRemarks, '${kwLower}') or contains(PublicRemarks, '${kwUpper}') or contains(PublicRemarks, '${kwTitle}'))`);
-      }
-      const filterValue = encodeURIComponent(filterParts.join(" and "));
-      fetchUrl = `${ampreUrl}/Property?$filter=${filterValue}&$top=100&$expand=Media`;
-      console.log(`Ampre Fetching: ${fetchUrl}`);
-      const response = await fetch(fetchUrl, {
-        headers: {
-          "Authorization": `Bearer ${ampreToken}`,
-          "Accept": "application/json"
+        if (saleLeaseStr === "sale") {
+          filterParts.push(`TransactionType eq 'For Sale'`);
+        } else if (saleLeaseStr === "lease") {
+          filterParts.push(`TransactionType eq 'For Lease'`);
         }
-      });
-      if (!response.ok) {
-        throw new Error(`Ampre RESO API responded with status ${response.status}`);
+        const minP = parseFloat(minPrice) || 0;
+        const maxP = parseFloat(maxPrice) || 0;
+        if (minP > 0) {
+          filterParts.push(`ListPrice ge ${minP}`);
+        }
+        if (maxP > 0 && maxP < 4e6) {
+          filterParts.push(`ListPrice le ${maxP}`);
+        }
+        if (bedsStr && bedsStr !== "All") {
+          const bedsNum = parseInt(bedsStr);
+          if (!isNaN(bedsNum) && bedsNum > 0) {
+            filterParts.push(`BedroomsTotal ge ${bedsNum}`);
+          }
+        }
+        if (bathsStr && bathsStr !== "All") {
+          const bathsNum = parseFloat(bathsStr);
+          if (!isNaN(bathsNum) && bathsNum > 0) {
+            filterParts.push(`BathroomsTotalInteger ge ${bathsNum}`);
+          }
+        }
+        if (typeStr && typeStr !== "All") {
+          if (typeStr === "condo") {
+            filterParts.push(`(contains(PropertyType, 'Condo') or contains(PropertySubType, 'Condo') or contains(PropertySubType, 'Condominium') or contains(PropertyType, 'Condominium'))`);
+          } else if (typeStr === "commercial") {
+            filterParts.push(`contains(PropertyType, 'Commercial')`);
+          } else if (typeStr === "townhome") {
+            filterParts.push(`(contains(PropertySubType, 'Townhouse') or contains(PropertySubType, 'Townhome') or contains(PropertySubType, 'Row') or contains(PropertySubType, 'Twnhouse') or contains(PropertySubType, 'Multiplex'))`);
+          } else if (typeStr === "residential") {
+            filterParts.push(`(contains(PropertyType, 'Residential') or contains(PropertyType, 'Freehold') or contains(PropertySubType, 'Detached') or contains(PropertySubType, 'Semi-Detached'))`);
+          }
+        }
+        if (keywordStr && keywordStr.trim() !== "") {
+          const kw = keywordStr.trim();
+          const kwLower = kw.toLowerCase();
+          const kwUpper = kw.toUpperCase();
+          const kwTitle = kw.charAt(0).toUpperCase() + kw.slice(1).toLowerCase();
+          filterParts.push(`(contains(PublicRemarks, '${kw}') or contains(UnparsedAddress, '${kw}') or contains(PublicRemarks, '${kwLower}') or contains(PublicRemarks, '${kwUpper}') or contains(PublicRemarks, '${kwTitle}'))`);
+        }
+        const filterValue = encodeURIComponent(filterParts.join(" and "));
+        fetchUrl = `${ampreUrl}/Property?$filter=${filterValue}&$top=100&$expand=Media`;
+        console.log(`Ampre Fetching: ${fetchUrl}`);
+        const response = await fetch(fetchUrl, {
+          headers: {
+            "Authorization": `Bearer ${ampreToken}`,
+            "Accept": "application/json"
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Ampre RESO API responded with status ${response.status}`);
+        }
+        const data = await response.json();
+        rawListings = data.value || data.listings || [];
       }
-      const data = await response.json();
-      const rawListings = data.value || data.listings || [];
       const mappedListings = rawListings.map((item, index) => {
         const addressStr = item.UnparsedAddress || `${item.StreetNumber || ""} ${item.StreetName || ""} ${item.StreetSuffix || ""}`.trim() || "Address on Request";
         const images = [];
@@ -187,18 +254,29 @@ app.get("/api/listings", async (req, res) => {
           description: item.PublicRemarks || "An incredible opportunity to own this highly desirable property. Centrally located with high-end premium finishes throughout.",
           features: cleanFeatures,
           yearBuilt: parseInt(item.YearBuilt) || 2015,
-          isLiveMLS: true
+          isLiveMLS: true,
+          isExclusive: directKeySet.has(item.ListingKey),
+          officeName: item.ListOfficeName || "HomeLife Superstars Real Estate Ltd., Brokerage",
+          propertySubType: item.PropertySubType || item.PropertyType || ""
         };
       });
       let filteredListings = mappedListings;
-      if (type && type !== "All") {
-        filteredListings = filteredListings.filter((item) => item.type === type);
+      if (!isFeatured && (!mlsStr || mlsStr.trim() === "")) {
+        if (type && type !== "All") {
+          filteredListings = filteredListings.filter((item) => item.type === type);
+        }
+        if (saleLease && saleLease !== "All") {
+          const targetStatus = saleLease === "lease" ? "for-lease" : "for-sale";
+          filteredListings = filteredListings.filter((item) => item.status === targetStatus);
+        }
       }
-      if (saleLease && saleLease !== "All") {
-        const targetStatus = saleLease === "lease" ? "for-lease" : "for-sale";
-        filteredListings = filteredListings.filter((item) => item.status === targetStatus);
-      }
-      if (sortBy === "priceAsc") {
+      if (isFeatured) {
+        filteredListings.sort((a, b) => {
+          if (a.isExclusive && !b.isExclusive) return -1;
+          if (!a.isExclusive && b.isExclusive) return 1;
+          return b.price - a.price;
+        });
+      } else if (sortBy === "priceAsc") {
         filteredListings.sort((a, b) => a.price - b.price);
       } else if (sortBy === "priceDesc") {
         filteredListings.sort((a, b) => b.price - a.price);
